@@ -7,11 +7,17 @@ pipeline {
     }
 
     stages {
+
         stage('Build') {
             steps {
                 sh '''
+                    echo "Building Docker image"
+
                     docker --version
-                    docker build -t sydney-house-price:${BUILD_NUMBER} .
+
+                    docker build \
+                        -t sydney-house-price:${BUILD_NUMBER} \
+                        .
                 '''
             }
         }
@@ -19,11 +25,16 @@ pipeline {
         stage('Test') {
             steps {
                 sh '''
+                    echo "Running automated tests"
+
                     rm -rf .venv
+
                     /opt/anaconda3/bin/python3 -m venv .venv
+
                     . .venv/bin/activate
 
                     python -m pip install --upgrade pip
+
                     pip install -r requirements.txt
 
                     PYTHONPATH=. python -m pytest -v
@@ -38,6 +49,8 @@ pipeline {
 
                     withSonarQubeEnv('SonarQube') {
                         sh """
+                            echo "Running SonarQube code quality analysis"
+
                             java -version
 
                             ${scannerHome}/bin/sonar-scanner \
@@ -54,13 +67,54 @@ pipeline {
         stage('Security') {
             steps {
                 sh '''
+                    echo "Running security scans"
+
                     . .venv/bin/activate
 
                     echo "Running Bandit source-code scan"
+
                     bandit -r app.py
 
                     echo "Running Trivy Docker image scan"
-                    trivy image --severity HIGH,CRITICAL sydney-house-price:${BUILD_NUMBER}
+
+                    trivy image \
+                        --severity HIGH,CRITICAL \
+                        sydney-house-price:${BUILD_NUMBER}
+                '''
+            }
+        }
+
+        stage('Deploy') {
+            steps {
+                sh '''
+                    echo "Deploying application to staging environment"
+
+                    docker rm -f sydney-house-price-staging || true
+
+                    docker run -d \
+                        --name sydney-house-price-staging \
+                        -p 8502:8501 \
+                        sydney-house-price:${BUILD_NUMBER}
+
+                    echo "Waiting for staging application to start"
+
+                    for i in {1..12}
+                    do
+                        if curl -f http://localhost:8502/_stcore/health
+                        then
+                            echo "Staging application is healthy"
+                            exit 0
+                        fi
+
+                        echo "Waiting for application..."
+                        sleep 5
+                    done
+
+                    echo "Staging deployment failed health check"
+
+                    docker logs sydney-house-price-staging
+
+                    exit 1
                 '''
             }
         }
