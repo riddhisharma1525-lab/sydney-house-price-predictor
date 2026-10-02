@@ -98,23 +98,30 @@ pipeline {
 
                     echo "Waiting for staging application to start"
 
-                    for i in {1..12}
+                    i=1
+
+                    while [ "$i" -le 12 ]
                     do
-                        if curl -f http://localhost:8502/_stcore/health
+                        if curl -fsS http://localhost:8502/_stcore/health
                         then
                             echo "Staging application is healthy"
-                            exit 0
+                            break
                         fi
 
-                        echo "Waiting for application..."
+                        echo "Waiting for staging application..."
                         sleep 5
+
+                        i=$((i + 1))
                     done
 
-                    echo "Staging deployment failed health check"
+                    if ! curl -fsS http://localhost:8502/_stcore/health > /dev/null
+                    then
+                        echo "Staging deployment failed health check"
 
-                    docker logs sydney-house-price-staging
+                        docker logs sydney-house-price-staging
 
-                    exit 1
+                        exit 1
+                    fi
                 '''
             }
         }
@@ -137,23 +144,88 @@ pipeline {
 
                     echo "Waiting for production application to start"
 
-                    for i in {1..12}
+                    i=1
+
+                    while [ "$i" -le 12 ]
                     do
-                        if curl -f http://localhost:8501/_stcore/health
+                        if curl -fsS http://localhost:8501/_stcore/health
                         then
                             echo "Production application is healthy"
-                            exit 0
+                            break
                         fi
 
                         echo "Waiting for production application..."
                         sleep 5
+
+                        i=$((i + 1))
                     done
 
-                    echo "Production release failed health check"
+                    if ! curl -fsS http://localhost:8501/_stcore/health > /dev/null
+                    then
+                        echo "Production release failed health check"
 
-                    docker logs sydney-house-price-production
+                        docker logs sydney-house-price-production
 
-                    exit 1
+                        exit 1
+                    fi
+                '''
+            }
+        }
+
+        stage('Monitoring') {
+            steps {
+                sh '''
+                    echo "Starting monitoring and alerting services"
+
+                    docker compose \
+                        -f docker-compose.monitoring.yml \
+                        up -d
+
+                    echo "Checking monitoring services"
+
+                    i=1
+
+                    while [ "$i" -le 12 ]
+                    do
+                        if curl -fsS http://localhost:9090/-/ready > /dev/null && \
+                           curl -fsS http://localhost:9093/-/ready > /dev/null && \
+                           curl -fsS http://localhost:3000/api/health > /dev/null
+                        then
+                            echo "Monitoring services are running"
+                            break
+                        fi
+
+                        echo "Waiting for monitoring services..."
+                        sleep 5
+
+                        i=$((i + 1))
+                    done
+
+                    if ! curl -fsS http://localhost:9090/-/ready > /dev/null
+                    then
+                        echo "Prometheus is not ready"
+                        exit 1
+                    fi
+
+                    if ! curl -fsS http://localhost:9093/-/ready > /dev/null
+                    then
+                        echo "Alertmanager is not ready"
+                        exit 1
+                    fi
+
+                    if ! curl -fsS http://localhost:3000/api/health > /dev/null
+                    then
+                        echo "Grafana is not ready"
+                        exit 1
+                    fi
+
+                    echo "Checking production monitoring"
+
+                    curl -fsS \
+                        "http://localhost:9115/probe?target=http://host.docker.internal:8501/_stcore/health&module=http_2xx" \
+                        | grep "probe_success 1"
+
+                    echo "Production application is being monitored successfully"
                 '''
             }
         }
