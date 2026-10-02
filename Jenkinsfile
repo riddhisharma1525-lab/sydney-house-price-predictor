@@ -37,7 +37,49 @@ pipeline {
 
                     pip install -r requirements.txt
 
+                    echo "Running unit tests"
+
                     PYTHONPATH=. python -m pytest -v
+
+                    echo "Running integration test"
+
+                    docker rm -f sydney-house-price-test || true
+
+                    docker run -d \
+                        --name sydney-house-price-test \
+                        -p 8503:8501 \
+                        sydney-house-price:${BUILD_NUMBER}
+
+                    i=1
+
+                    while [ "$i" -le 12 ]
+                    do
+                        if curl -fsS http://localhost:8503/_stcore/health
+                        then
+                            echo "Integration test passed"
+                            break
+                        fi
+
+                        echo "Waiting for test application..."
+                        sleep 5
+
+                        i=$((i + 1))
+                    done
+
+                    if ! curl -fsS http://localhost:8503/_stcore/health > /dev/null
+                    then
+                        echo "Integration test failed"
+
+                        docker logs sydney-house-price-test
+
+                        docker rm -f sydney-house-price-test || true
+
+                        exit 1
+                    fi
+
+                    docker rm -f sydney-house-price-test
+
+                    echo "All tests passed"
                 '''
             }
         }
