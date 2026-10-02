@@ -5,10 +5,6 @@ pipeline {
         PATH = "/Applications/Docker.app/Contents/Resources/bin:/usr/local/bin:/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin"
     }
 
-    tools {
-        sonarRunner 'SonarScanner'
-    }
-
     stages {
         stage('Build') {
             steps {
@@ -36,13 +32,17 @@ pipeline {
 
         stage('Code Quality') {
             steps {
-                withSonarQubeEnv('SonarQube') {
-                    sh '''
-                        sonar-scanner \
-                          -Dsonar.projectKey=sydney-house-price-predictor \
-                          -Dsonar.sources=. \
-                          -Dsonar.exclusions=.venv/**,tests/**,screenshots/**,syd_house_price.ipynb
-                    '''
+                script {
+                    def scannerHome = tool 'SonarScanner'
+
+                    withSonarQubeEnv('SonarQube') {
+                        sh """
+                            ${scannerHome}/bin/sonar-scanner \
+                              -Dsonar.projectKey=sydney-house-price-predictor \
+                              -Dsonar.sources=. \
+                              -Dsonar.exclusions=.venv/**,tests/**,screenshots/**,syd_house_price.ipynb
+                        """
+                    }
                 }
             }
         }
