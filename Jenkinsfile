@@ -203,6 +203,7 @@ pipeline {
             steps {
                 sh '''
                     echo "Releasing application to production"
+                    echo "Release version: ${APP_VERSION}"
 
                     docker tag \
                         sydney-house-price:${BUILD_NUMBER} \
