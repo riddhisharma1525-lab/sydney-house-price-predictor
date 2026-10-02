@@ -44,9 +44,12 @@ pipeline {
 
                     pip install -r requirements.txt
 
-                    echo "Running unit tests"
+                    echo "Running unit tests with coverage"
 
-                    PYTHONPATH=. python -m pytest -v
+                    PYTHONPATH=. python -m pytest -v \
+                        --cov=app \
+                        --cov-report=term \
+                        --cov-report=xml:coverage.xml
 
                     echo "Running integration test"
 
@@ -106,6 +109,7 @@ pipeline {
                               -Dsonar.projectKey=sydney-house-price-predictor \
                               -Dsonar.sources=. \
                               -Dsonar.python.version=3.13 \
+                              -Dsonar.python.coverage.reportPaths=coverage.xml \
                               -Dsonar.exclusions=.venv/**,tests/**,screenshots/**,syd_house_price.ipynb
                         """
                     }
