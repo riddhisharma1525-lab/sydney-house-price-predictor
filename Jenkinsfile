@@ -43,10 +43,25 @@ pipeline {
                             ${scannerHome}/bin/sonar-scanner \
                               -Dsonar.projectKey=sydney-house-price-predictor \
                               -Dsonar.sources=. \
+                              -Dsonar.python.version=3.13 \
                               -Dsonar.exclusions=.venv/**,tests/**,screenshots/**,syd_house_price.ipynb
                         """
                     }
                 }
+            }
+        }
+
+        stage('Security') {
+            steps {
+                sh '''
+                    . .venv/bin/activate
+
+                    echo "Running Bandit source-code scan"
+                    bandit -r app.py
+
+                    echo "Running Trivy Docker image scan"
+                    trivy image --severity HIGH,CRITICAL sydney-house-price:${BUILD_NUMBER}
+                '''
             }
         }
     }
