@@ -1,0 +1,9 @@
+.venv
+.git
+.pytest_cache
+__pycache__
+*.pyc
+screenshots
+syd_house_price.ipynb
+tests
+.scannerwork
