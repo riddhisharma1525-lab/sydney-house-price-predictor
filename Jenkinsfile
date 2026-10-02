@@ -2,7 +2,8 @@ pipeline {
     agent any
 
     environment {
-        PATH = "/Applications/Docker.app/Contents/Resources/bin:/usr/local/bin:/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin"
+        PATH = "/Applications/Docker.app/Contents/Resources/bin:/opt/homebrew/opt/openjdk@17/bin:/usr/local/bin:/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin"
+        JAVA_HOME = "/opt/homebrew/opt/openjdk@17/libexec/openjdk.jdk/Contents/Home"
     }
 
     stages {
@@ -37,6 +38,8 @@ pipeline {
 
                     withSonarQubeEnv('SonarQube') {
                         sh """
+                            java -version
+
                             ${scannerHome}/bin/sonar-scanner \
                               -Dsonar.projectKey=sydney-house-price-predictor \
                               -Dsonar.sources=. \
