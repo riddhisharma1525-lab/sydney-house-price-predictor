@@ -1,0 +1,14 @@
+groups:
+  - name: application-alerts
+
+    rules:
+      - alert: ProductionAppDown
+        expr: probe_success == 0
+        for: 30s
+
+        labels:
+          severity: critical
+
+        annotations:
+          summary: "Sydney House Price Predictor is down"
+          description: "The production application health check has failed for more than 30 seconds."
