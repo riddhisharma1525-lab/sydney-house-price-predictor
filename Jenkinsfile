@@ -1,12 +1,16 @@
 pipeline {
     agent any
 
+    environment {
+        PATH = "/Applications/Docker.app/Contents/Resources/bin:/usr/local/bin:/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin"
+    }
+
     stages {
         stage('Build') {
             steps {
                 sh '''
-                    /Applications/Docker.app/Contents/Resources/bin/docker --version
-                    /Applications/Docker.app/Contents/Resources/bin/docker build -t sydney-house-price:${BUILD_NUMBER} .
+                    docker --version
+                    docker build -t sydney-house-price:${BUILD_NUMBER} .
                 '''
             }
         }
