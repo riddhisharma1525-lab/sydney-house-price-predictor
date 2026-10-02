@@ -102,6 +102,18 @@ pipeline {
                               -Dsonar.exclusions=.venv/**,tests/**,screenshots/**,syd_house_price.ipynb
                         """
                     }
+
+                    echo "Waiting for SonarQube Quality Gate"
+
+                    timeout(time: 2, unit: 'MINUTES') {
+                        def qualityGate = waitForQualityGate()
+
+                        if (qualityGate.status != 'OK') {
+                            error "SonarQube Quality Gate failed: ${qualityGate.status}"
+                        }
+
+                        echo "SonarQube Quality Gate passed"
+                    }
                 }
             }
         }
