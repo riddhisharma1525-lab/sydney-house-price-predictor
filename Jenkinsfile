@@ -118,5 +118,44 @@ pipeline {
                 '''
             }
         }
+
+        stage('Release') {
+            steps {
+                sh '''
+                    echo "Releasing application to production"
+
+                    docker tag \
+                        sydney-house-price:${BUILD_NUMBER} \
+                        sydney-house-price:production
+
+                    docker rm -f sydney-house-price-production || true
+
+                    docker run -d \
+                        --name sydney-house-price-production \
+                        -p 8501:8501 \
+                        sydney-house-price:production
+
+                    echo "Waiting for production application to start"
+
+                    for i in {1..12}
+                    do
+                        if curl -f http://localhost:8501/_stcore/health
+                        then
+                            echo "Production application is healthy"
+                            exit 0
+                        fi
+
+                        echo "Waiting for production application..."
+                        sleep 5
+                    done
+
+                    echo "Production release failed health check"
+
+                    docker logs sydney-house-price-production
+
+                    exit 1
+                '''
+            }
+        }
     }
 }
