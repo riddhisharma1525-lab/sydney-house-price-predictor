@@ -5,7 +5,8 @@ pipeline {
         stage('Build') {
             steps {
                 sh '''
-                    docker build -t sydney-house-price:${BUILD_NUMBER} .
+                    /Applications/Docker.app/Contents/Resources/bin/docker --version
+                    /Applications/Docker.app/Contents/Resources/bin/docker build -t sydney-house-price:${BUILD_NUMBER} .
                 '''
             }
         }
