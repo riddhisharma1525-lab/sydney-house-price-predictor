@@ -4,7 +4,11 @@ pipeline {
     stages {
         stage('Build') {
             steps {
-                echo 'Building Sydney House Price Predictor'
+                sh '''
+                    python3 -m venv .venv
+                    . .venv/bin/activate
+                    pip install -r requirements.txt
+                '''
             }
         }
 
