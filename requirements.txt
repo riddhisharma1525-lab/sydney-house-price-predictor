@@ -5,4 +5,5 @@ scikit-learn==1.8.0
 openpyxl>=3.1,<4
 pytest
 bandit
+
 pytest-cov
