@@ -9,9 +9,8 @@ RUN apt-get update && \
 COPY requirements.txt .
 
 RUN pip install --no-cache-dir --upgrade pip setuptools && \
-    pip install --no-cache-dir -r requirements.txt
-
-RUN useradd --create-home --uid 10001 appuser
+    pip install --no-cache-dir -r requirements.txt && \
+    useradd --create-home --uid 10001 appuser
 
 COPY app.py .
 COPY ["Sydney_Sold_Property_Dataset (1).xlsx", "./"]
