@@ -129,11 +129,23 @@ pipeline {
 
                     bandit -r app.py
 
-                    echo "Running Trivy Docker image scan"
+                    echo "Running Trivy critical vulnerability gate"
 
                     trivy image \
+                        --scanners vuln \
+                        --severity CRITICAL \
+                        --ignore-unfixed \
+                        --exit-code 1 \
+                        sydney-house-price:${BUILD_NUMBER}
+
+                    echo "Running full Trivy vulnerability report"
+
+                    trivy image \
+                        --scanners vuln \
                         --severity HIGH,CRITICAL \
                         sydney-house-price:${BUILD_NUMBER}
+
+                    echo "Security checks completed"
                 '''
             }
         }
