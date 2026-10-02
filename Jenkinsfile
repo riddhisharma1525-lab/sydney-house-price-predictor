@@ -1,9 +1,14 @@
 pipeline {
     agent any
 
+    triggers {
+        pollSCM('H/5 * * * *')
+    }
+
     environment {
         PATH = "/Applications/Docker.app/Contents/Resources/bin:/opt/homebrew/opt/openjdk@17/bin:/usr/local/bin:/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin"
         JAVA_HOME = "/opt/homebrew/opt/openjdk@17/libexec/openjdk.jdk/Contents/Home"
+        APP_VERSION = "1.0.${BUILD_NUMBER}"
     }
 
     stages {
@@ -12,11 +17,13 @@ pipeline {
             steps {
                 sh '''
                     echo "Building Docker image"
+                    echo "Application version: ${APP_VERSION}"
 
                     docker --version
 
                     docker build \
                         -t sydney-house-price:${BUILD_NUMBER} \
+                        -t sydney-house-price:${APP_VERSION} \
                         .
                 '''
             }
